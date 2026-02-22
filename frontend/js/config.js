@@ -3,4 +3,4 @@
  * 修改 API_BASE_URL 可切换 API 域名，留空则使用当前页面域名（window.location.origin）
  */
 // const API_BASE_URL = 'https://3.xm006.com';
-window.API_BASE = API_BASE_URL || window.location.origin;
+window.API_BASE = window.location.origin;
