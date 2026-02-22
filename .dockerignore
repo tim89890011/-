@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Data (mounted as volume)
+data/
+logs/
+backups/
+
+# Environment (mounted separately)
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tests
+tests/
+pytest.ini
+
+# Docs
+*.md
+LICENSE
+
+# Node (frontend-v2 not used)
+frontend-v2/
+node_modules/
+
+# Deploy scripts (not needed in container)
+deploy/
+scripts/

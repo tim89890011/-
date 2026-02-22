@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>钢子出击 - 注册</title>
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+<div class="login-container">
+    <div class="login-card">
+        <div class="logo-section">
+            <div class="logo-icon">📝</div>
+            <h1 class="logo-title">创建账号</h1>
+            <p class="logo-subtitle">新用户注册</p>
+        </div>
+        <form id="registerForm" autocomplete="off">
+            <div class="input-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+            <div class="input-group">
+                <label for="password">密码（至少6位）</label>
+                <input type="password" id="password" name="password" required autocomplete="new-password">
+            </div>
+            <div class="input-group">
+                <label id="captchaLabel" for="captchaAnswer">验证码</label>
+                <input type="text" id="captchaAnswer" name="captchaAnswer" required autocomplete="off">
+            </div>
+            <div class="error-msg" id="registerMsg" role="alert" aria-live="assertive"></div>
+            <button type="submit" class="login-btn"><span class="btn-text">注册</span></button>
+            <div class="auth-links">
+                <a href="/login.html">返回登录</a>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(() => {
+  let captchaId = '';
+  let registerEnabled = true;
+  async function loadCaptcha() {
+    const r = await fetch((window.API_BASE || window.location.origin) + '/api/auth/captcha');
+    if (!r.ok) throw new Error('验证码加载失败');
+    const d = await r.json();
+    captchaId = d.captcha_id;
+    document.getElementById('captchaLabel').textContent = `验证码：${d.question}`;
+  }
+
+  function setMsg(text, ok=false) {
+    const el = document.getElementById('registerMsg');
+    el.textContent = text;
+    el.classList.add('show');
+    el.style.color = ok ? '#00ff88' : '#ff4444';
+  }
+
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!registerEnabled) {
+      setMsg('当前环境已关闭公开注册');
+      return;
+    }
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const captchaAnswer = document.getElementById('captchaAnswer').value.trim();
+    try {
+      const r = await fetch((window.API_BASE || window.location.origin) + '/api/auth/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, password, captcha_id: captchaId, captcha_answer: captchaAnswer})
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        setMsg(typeof data.detail === 'string' ? data.detail : '注册失败');
+        await loadCaptcha();
+        return;
+      }
+      setMsg('注册成功，正在跳转登录...', true);
+      setTimeout(() => { window.location.href = '/login.html'; }, 800);
+    } catch (_) {
+      setMsg('网络错误，请稍后重试');
+    }
+  });
+
+  (async () => {
+    try {
+      const r = await fetch((window.API_BASE || window.location.origin) + '/api/auth/register-status');
+      const s = r.ok ? await r.json() : { enabled: false };
+      registerEnabled = !!s.enabled;
+      if (!registerEnabled) {
+        document.querySelector('.btn-text').textContent = '当前已关闭注册';
+        document.querySelector('.login-btn').disabled = true;
+        // 禁用所有输入框，避免用户在注册关闭时仍可输入
+        document.querySelectorAll('#registerForm input').forEach(el => {
+            el.disabled = true;
+            el.style.opacity = '0.5';
+            el.style.cursor = 'not-allowed';
+        });
+        setMsg('当前环境已关闭公开注册');
+        return;
+      }
+      await loadCaptcha();
+    } catch (_) {
+      setMsg('注册状态加载失败，请稍后重试');
+    }
+  })();
+})();
+</script>
+</body>
+</html>

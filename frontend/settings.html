@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>设置 · 钢子出击</title>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+<!-- 复用主站样式体系 -->
+<link rel="stylesheet" href="css/main.css?v=41">
+<link rel="stylesheet" href="css/light-theme.css?v=56">
+<link rel="stylesheet" href="css/responsive.css?v=38">
+<!-- 设置页增量样式 -->
+<link rel="stylesheet" href="css/settings.css?v=6">
+</head>
+<body>
+
+<!-- 顶部导航（与主站同结构） -->
+<div class="sticky-top">
+<div class="header">
+  <div class="logo">
+    <a href="/index.html" title="返回首页"><div class="logo-icon"><i class="ri-flashlight-fill"></i></div></a>
+    <h1>钢子出击 <span>用户设置</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="status-pill is-online" id="wsStatus"><div class="dot"></div><span>已连接</span></div>
+    <button type="button" class="header-btn theme-toggle" id="themeToggle" title="切换主题"><i class="ri-sun-line"></i></button>
+    <span class="header-time" id="headerTime"></span>
+    <a href="/index.html" class="header-btn settings-btn" title="返回首页"><i class="ri-dashboard-line"></i></a>
+    <button type="button" class="header-btn logout-btn" onclick="if(window.clearToken)window.clearToken();location.href='/login.html'" title="退出登录"><i class="ri-logout-box-r-line"></i><span class="logout-text">退出</span></button>
+  </div>
+</div>
+</div>
+
+<!-- 主体内容 -->
+<div class="container">
+<div class="settings-layout">
+
+  <!-- ⚡ 策略模式 -->
+  <div class="card mb">
+    <div class="card-head"><h3><i class="ri-flashlight-line"></i> 策略模式</h3></div>
+    <div class="card-body">
+      <div class="mode-switcher" id="modeSwitcher">
+        <button class="mode-btn active" data-mode="steady">
+          <i class="ri-shield-check-line"></i>
+          <span class="mode-name">稳健</span>
+          <span class="mode-desc">低杠杆 · 严风控</span>
+        </button>
+        <button class="mode-btn" data-mode="aggressive">
+          <i class="ri-fire-line"></i>
+          <span class="mode-name">激进</span>
+          <span class="mode-desc">高杠杆 · 追收益</span>
+        </button>
+        <button class="mode-btn" data-mode="custom">
+          <i class="ri-equalizer-line"></i>
+          <span class="mode-name">自定义</span>
+          <span class="mode-desc">自由调整参数</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 两栏布局 -->
+  <div class="grid-2 mb">
+    <!-- 💰 仓位管理 -->
+    <div class="card">
+      <div class="card-head"><h3><i class="ri-money-dollar-circle-line"></i> 仓位管理</h3></div>
+      <div class="card-body">
+        <div class="setting-rows">
+          <div class="setting-row">
+            <label>每单保证金</label>
+            <div class="input-suffix"><input type="number" id="amount_usdt" min="10" max="5000" step="10"><span>USDT</span></div>
+          </div>
+          <div class="setting-row">
+            <label>余额占比</label>
+            <div class="input-suffix"><input type="number" id="amount_pct" min="1" max="50" step="0.5"><span>%</span></div>
+          </div>
+          <div class="setting-row">
+            <label>单币种上限</label>
+            <div class="input-suffix"><input type="number" id="max_position_usdt" min="50" max="10000" step="50"><span>USDT</span></div>
+          </div>
+          <div class="setting-row">
+            <label>持仓占比上限</label>
+            <div class="input-suffix"><input type="number" id="max_position_pct" min="5" max="80" step="5"><span>%</span></div>
+          </div>
+          <div class="setting-row">
+            <label>每日限额</label>
+            <div class="input-suffix"><input type="number" id="daily_limit_usdt" min="100" max="50000" step="100"><span>USDT</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⚙️ 交易参数 -->
+    <div class="card">
+      <div class="card-head"><h3><i class="ri-settings-4-line"></i> 交易参数</h3></div>
+      <div class="card-body">
+        <div class="setting-rows">
+          <div class="setting-row">
+            <label>最低置信度</label>
+            <div class="input-suffix"><input type="number" id="min_confidence" min="20" max="100" step="5"><span>%</span></div>
+          </div>
+          <div class="setting-row">
+            <label>开仓冷却</label>
+            <div class="input-suffix"><input type="number" id="cooldown_seconds" min="30" max="3600" step="30"><span>秒</span></div>
+          </div>
+          <div class="setting-row">
+            <label>杠杆倍数</label>
+            <div class="input-suffix"><input type="number" id="leverage" min="1" max="20" step="1"><span>x</span></div>
+          </div>
+          <div class="setting-row">
+            <label>保证金模式</label>
+            <select id="margin_mode">
+              <option value="isolated">逐仓</option>
+              <option value="cross">全仓</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 两栏布局 -->
+  <div class="grid-2 mb">
+    <!-- 🛡️ 风控设置 -->
+    <div class="card">
+      <div class="card-head"><h3><i class="ri-shield-star-line"></i> 风控设置</h3></div>
+      <div class="card-body">
+        <div class="setting-rows">
+          <div class="setting-row">
+            <label>止盈比例</label>
+            <div class="input-suffix"><input type="number" id="take_profit_pct" min="0.5" max="20" step="0.5"><span>%</span></div>
+          </div>
+          <div class="setting-row">
+            <label>止损比例</label>
+            <div class="input-suffix"><input type="number" id="stop_loss_pct" min="0.5" max="10" step="0.5"><span>%</span></div>
+          </div>
+          <div class="setting-row">
+            <label>移动止损</label>
+            <label class="s-toggle">
+              <input type="checkbox" id="trailing_stop_enabled">
+              <span class="s-toggle-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <label>持仓超时</label>
+            <div class="input-suffix"><input type="number" id="position_timeout_hours" min="0" max="168" step="1"><span>小时</span></div>
+          </div>
+        </div>
+        <div class="setting-divider"></div>
+        <div class="setting-sub-title" style="font-size:12px;color:var(--text-secondary);margin:8px 0 6px;"><i class="ri-shield-flash-line" style="margin-right:4px;"></i>止损磨损防护</div>
+        <div class="setting-rows">
+          <div class="setting-row">
+            <label title="止损后冷却时间 = 正常冷却 × 此倍率">止损冷却倍率</label>
+            <div class="input-suffix"><input type="number" id="sl_cooldown_multiplier" min="1" max="5" step="0.5"><span>倍</span></div>
+          </div>
+          <div class="setting-row">
+            <label title="同一币种连续止损达到此次数后暂停开仓">连续止损上限</label>
+            <div class="input-suffix"><input type="number" id="max_consecutive_sl" min="1" max="10" step="1"><span>次</span></div>
+          </div>
+          <div class="setting-row">
+            <label title="触发连续止损暂停后，暂停开仓的时长">暂停时长</label>
+            <div class="input-suffix"><input type="number" id="sl_pause_minutes" min="5" max="120" step="5"><span>分钟</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 💎 交易币种 + 通知 -->
+    <div class="card">
+      <div class="card-head"><h3><i class="ri-coin-line"></i> 交易币种</h3></div>
+      <div class="card-body">
+        <div class="symbols-tags" id="symbolsTags"></div>
+        <div class="symbols-input-row">
+          <input type="text" id="symbolInput" placeholder="添加币种，如 SOLUSDT" autocomplete="off">
+          <button class="s-btn-add" id="addSymbolBtn">添加</button>
+        </div>
+        <div class="setting-divider"></div>
+        <div class="setting-rows">
+          <div class="setting-row">
+            <label><i class="ri-telegram-line" style="margin-right:4px;color:var(--blue)"></i>Telegram 通知</label>
+            <label class="s-toggle">
+              <input type="checkbox" id="tg_enabled">
+              <span class="s-toggle-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <label>Chat ID</label>
+            <input type="text" id="tg_chat_id" placeholder="Telegram Chat ID" class="s-text-input">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 👤 账户安全 -->
+  <div class="card mb">
+    <div class="card-head"><h3><i class="ri-lock-line"></i> 账户安全</h3></div>
+    <div class="card-body">
+      <div class="setting-rows">
+        <div class="setting-row" id="pwdSection">
+          <label>修改密码</label>
+          <button class="s-btn-outline" id="changePwdBtn">修改</button>
+        </div>
+      </div>
+      <!-- 修改密码表单（默认隐藏） -->
+      <div class="pwd-form hidden" id="pwdForm">
+        <div class="setting-rows">
+          <div class="setting-row"><label>当前密码</label><input type="password" id="oldPassword" class="s-pwd-input" autocomplete="current-password"></div>
+          <div class="setting-row"><label>新密码</label><input type="password" id="newPassword" class="s-pwd-input" autocomplete="new-password" minlength="6"></div>
+          <div class="setting-row"><label>确认密码</label><input type="password" id="confirmPassword" class="s-pwd-input" autocomplete="new-password"></div>
+        </div>
+        <div class="pwd-actions">
+          <button class="s-btn-outline" id="cancelPwdBtn">取消</button>
+          <button class="s-btn-primary" id="submitPwdBtn">确认修改</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 保存按钮（非 fixed，正常文档流） -->
+  <div class="save-section">
+    <button class="s-btn-save" id="saveBtn">
+      <i class="ri-save-line"></i> 保存设置
+    </button>
+  </div>
+
+</div><!-- /.settings-layout -->
+</div><!-- /.container -->
+
+<!-- Toast（复用主站样式） -->
+<div class="app-toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script type="module" src="js/auth.js?v=11"></script>
+<script type="module" src="js/settings.js?v=6"></script>
+</body>
+</html>

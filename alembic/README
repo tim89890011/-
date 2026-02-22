@@ -1,0 +1,39 @@
+# Alembic 数据库迁移管理
+
+钢子出击项目使用 Alembic 管理数据库架构版本。
+
+## 常用命令
+
+```bash
+# 查看当前版本
+alembic current
+
+# 查看迁移历史
+alembic history --verbose
+
+# 创建自动迁移脚本（根据 models.py 变更）
+alembic revision --autogenerate -m "描述变更内容"
+
+# 升级到最新版本
+alembic upgrade head
+
+# 降级到指定版本
+alembic downgrade <revision_id>
+
+# 降级到前一个版本
+alembic downgrade -1
+
+# 查看待执行的 SQL（不实际执行）
+alembic upgrade head --sql
+```
+
+## 迁移脚本说明
+
+- `001_initial.py` - 初始迁移，创建所有基础表结构
+- `002_compliance_fixes.py` - 合规性修复，移除敏感字段，添加风险评估
+
+## 注意事项
+
+1. 生产环境迁移前请务必备份数据库
+2. 降级操作可能导致数据丢失，请谨慎使用
+3. SQLite 不支持 ALTER TABLE DROP COLUMN，002 迁移使用表重建策略

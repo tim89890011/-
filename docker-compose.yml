@@ -1,0 +1,22 @@
+# 钢子出击 - Docker Compose
+# 使用方法: docker compose up -d
+
+services:
+  app:
+    build: .
+    container_name: gangzi-app
+    restart: unless-stopped
+    ports:
+      - "9998:9998"
+    volumes:
+      - ./data:/app/data          # SQLite 数据持久化
+      - ./logs:/app/logs          # 日志持久化
+      - ./.env:/app/.env:ro       # 配置文件（只读）
+    environment:
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9998/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Create required directories
+        run: mkdir -p data logs
+
+      - name: Create minimal .env for tests
+        run: |
+          cat > .env << 'EOF'
+          DEEPSEEK_API_KEY=test-key-ci
+          QWEN_API_KEY=test-key-ci
+          JWT_SECRET=ci-test-secret-not-for-production
+          ALLOW_DEFAULT_JWT_SECRET=true
+          ALLOW_WEAK_ADMIN_PASSWORD=true
+          DATABASE_URL=sqlite+aiosqlite:///./data/test.db
+          TRADE_ENABLED=false
+          BINANCE_TESTNET_API_KEY=
+          BINANCE_TESTNET_API_SECRET=
+          EOF
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Lint with ruff
+        run: ruff check backend/ --select E,W,F --ignore E501
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Fail if any .py file contains hardcoded API keys or passwords
+          if grep -rn "sk-[a-zA-Z0-9]\{20,\}" backend/ --include="*.py"; then
+            echo "ERROR: Hardcoded API key found!"
+            exit 1
+          fi
+          echo "No hardcoded secrets detected."
+
+      - name: Check testnet safety
+        run: |
+          # Verify no mainnet URLs in trading code
+          if grep -rn "fstream\.binance\.com\|fapi\.binance\.com" backend/trading/ --include="*.py" | grep -v testnet | grep -v "#"; then
+            echo "ERROR: Mainnet URL detected in trading code!"
+            exit 1
+          fi
+          echo "All trading URLs point to testnet."

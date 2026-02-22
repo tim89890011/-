@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>钢子出击 - 登录</title>
+    <link rel="stylesheet" href="css/login.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- 背景 Canvas（粒子 + K线动画） -->
+    <canvas id="bgCanvas" aria-hidden="true"></canvas>
+
+    <!-- 登录卡片 -->
+    <div class="login-container">
+        <div class="login-card" id="loginCard">
+            <div class="logo-section">
+                <div class="logo-icon"><i class="ri-flashlight-fill"></i></div>
+                <h1 class="logo-title">钢子出击</h1>
+                <p class="logo-subtitle">AI 量化交易信号系统</p>
+            </div>
+
+            <form id="loginForm" autocomplete="off" novalidate>
+                <div class="input-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" name="username" placeholder="请输入用户名" required
+                        autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" name="password" placeholder="请输入密码" required
+                        autocomplete="current-password">
+                </div>
+                <div class="error-msg" id="errorMsg" role="alert" aria-live="assertive"></div>
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="btn-text">进入系统</span>
+                    <span class="btn-loading" style="display:none;">
+                        <span class="spinner"></span> 验证中...
+                    </span>
+                </button>
+                <div class="auth-links">
+                    <a id="registerLink" href="/register.html">注册账号</a>
+                    <a href="/forgot-password.html">忘记密码</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 底部实时行情 -->
+    <div class="ticker-bar" id="tickerBar" aria-hidden="true">
+        <div class="ticker-item" id="ticker-BTC">
+            <span class="ticker-name">BTC</span>
+            <span class="ticker-price" id="price-BTC">--</span>
+        </div>
+        <div class="ticker-item" id="ticker-ETH">
+            <span class="ticker-name">ETH</span>
+            <span class="ticker-price" id="price-ETH">--</span>
+        </div>
+        <div class="ticker-item" id="ticker-SOL">
+            <span class="ticker-name">SOL</span>
+            <span class="ticker-price" id="price-SOL">--</span>
+        </div>
+        <div class="ticker-item" id="ticker-BNB">
+            <span class="ticker-name">BNB</span>
+            <span class="ticker-price" id="price-BNB">--</span>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script>
+        // ============ 背景动画（极光粒子） ============
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let auroraBlobs = [];
+        let animFrameId;
+        let priceTimerId;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 粒子星点
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2.6 + 0.6;
+                this.speedX = (Math.random() - 0.5) * 0.25;
+                this.speedY = (Math.random() - 0.5) * 0.2;
+                this.opacity = Math.random() * 0.4 + 0.08;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(94, 234, 212, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        class AuroraBlob {
+            constructor(color) {
+                this.color = color;
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 220 + 140;
+                this.vx = (Math.random() - 0.5) * 0.18;
+                this.vy = (Math.random() - 0.5) * 0.15;
+                this.opacity = Math.random() * 0.16 + 0.08;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < -this.radius || this.x > canvas.width + this.radius) this.vx *= -1;
+                if (this.y < -this.radius || this.y > canvas.height + this.radius) this.vy *= -1;
+            }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, this.radius * 0.1, this.x, this.y, this.radius);
+                gradient.addColorStop(0, `${this.color}${Math.floor(this.opacity * 255).toString(16).padStart(2, '0')}`);
+                gradient.addColorStop(1, `${this.color}00`);
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // 初始化
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 40 : 85;
+        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+        const blobColors = ['#06b6d4', '#3b82f6', '#10b981'];
+        auroraBlobs = blobColors.map(c => new AuroraBlob(c));
+
+        function drawGrid() {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
+            ctx.lineWidth = 1;
+            const step = 56;
+            for (let x = 0; x <= canvas.width; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            bgGradient.addColorStop(0, '#060b17');
+            bgGradient.addColorStop(0.55, '#08152c');
+            bgGradient.addColorStop(1, '#071022');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawGrid();
+
+            auroraBlobs.forEach((blob) => {
+                blob.update();
+                blob.draw();
+            });
+
+            // 粒子
+            particles.forEach((p) => {
+                p.update();
+                p.draw();
+            });
+
+            // 粒子连线
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist2 = dx * dx + dy * dy;
+                    const maxDist2 = 140 * 140;
+                    if (dist2 < maxDist2) {
+                        const distRatio = Math.sqrt(dist2) / 140;
+                        ctx.strokeStyle = `rgba(56, 189, 248, ${0.14 * (1 - distRatio)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            animFrameId = requestAnimationFrame(animate);
+        }
+        animate();
+
+        // ============ 实时价格（Binance REST API） ============
+        async function fetchPrices() {
+            const symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'];
+            const names = { BTCUSDT: 'BTC', ETHUSDT: 'ETH', SOLUSDT: 'SOL', BNBUSDT: 'BNB' };
+            try {
+                const resp = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=' + JSON.stringify(symbols));
+                const data = await resp.json();
+                data.forEach(item => {
+                    const name = names[item.symbol];
+                    const el = document.getElementById('price-' + name);
+                    if (el) {
+                        const price = parseFloat(item.price);
+                        const old = parseFloat(el.textContent.replace(/[^0-9.]/g, '')) || 0;
+                        el.textContent = '$' + price.toLocaleString('en-US', { maximumFractionDigits: 2 });
+                        if (old > 0) {
+                            el.classList.remove('flash-green', 'flash-red');
+                            const flashClass = price > old ? 'flash-green' : (price < old ? 'flash-red' : null);
+                            if (flashClass) {
+                                requestAnimationFrame(() => el.classList.add(flashClass));
+                            }
+                        }
+                    }
+                });
+            } catch (_) { }
+        }
+        fetchPrices();
+        priceTimerId = setInterval(fetchPrices, 5000);
+        window.addEventListener('beforeunload', () => {
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            if (priceTimerId) clearInterval(priceTimerId);
+        });
+
+        // 保持注册入口和后端开关一致
+        (async () => {
+            try {
+                const resp = await fetch((window.API_BASE || window.location.origin) + '/api/auth/register-status');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const link = document.getElementById('registerLink');
+                if (link && data.enabled === false) {
+                    link.textContent = '注册已关闭';
+                    link.removeAttribute('href');
+                    link.style.opacity = '0.6';
+                    link.style.cursor = 'not-allowed';
+                }
+            } catch (_) { }
+        })();
+    </script>
+</body>
+
+</html>

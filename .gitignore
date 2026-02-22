@@ -1,0 +1,64 @@
+secrets/*
+logs/*.log
+*.bak.*
+.env
+data/
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs (including rotated)
+logs/*.log.*
+*.log
+
+# Backups / reports / artifacts
+backups/
+test-screenshots/
+audit-screenshots/
+console-debug-screenshots/
+theme-visual-verification/
+audit-test-output.log
+nohup.out
+*.pid
+.DS_Store
+*.tar.gz
+reports/
+
+# Node modules
+node_modules/
+e2e/node_modules/
+e2e/artifacts/
+
+# Editor / IDE
+.idea/
+.vscode/
+
+# Frontend broken backup
+frontend_broken_*/
+
+# Users (local artifact)
+Users/
+
+# Archive
+_archive_py/
+
+# Generated caches
+.cache/
+
+# Abandoned frontend v2
+frontend-v2/
+
+# Pull backup directories
+_backup_before_pull_*/
+
+# Database files in backend
+backend/*.db
+
+# CI test env files
+.env.test
+.env.ci

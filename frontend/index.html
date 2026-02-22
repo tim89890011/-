@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>钢子出击 · AI 量化交易信号系统</title>
+<link rel="stylesheet" href="css/main.css?v=53">
+<link rel="stylesheet" href="css/ai-panel.css?v=39">
+<link rel="stylesheet" href="css/animations.css?v=31">
+<link rel="stylesheet" href="css/responsive.css?v=38">
+<link rel="stylesheet" href="css/light-theme.css?v=18">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- 粒子背景 -->
+<canvas id="particleCanvas" aria-hidden="true"></canvas>
+
+<div class="main-content">
+
+<!-- 固定顶部区域 -->
+<div class="sticky-top">
+
+<!-- 头部 -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon"><i class="ri-flashlight-fill"></i></div>
+    <h1>钢子出击 <span>六边形 v1.2</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="status-pill" id="wsStatus">
+      <div class="dot"></div>
+      <span>连接中...</span>
+    </div>
+    <button type="button" class="header-btn theme-toggle" id="themeToggle" title="切换主题"><i class="ri-sun-line"></i></button>
+    <button type="button" class="header-btn voice-btn" id="voiceToggle" title="语音播报"><i class="ri-volume-up-line"></i></button>
+    <span class="header-time" id="headerTime"></span>
+    <a href="/settings.html" class="header-btn settings-btn" title="用户设置"><i class="ri-user-settings-line"></i></a>
+    <button type="button" class="header-btn logout-btn" onclick="logout()" title="退出登录"><i class="ri-logout-box-r-line"></i><span class="logout-text">退出</span></button>
+  </div>
+</div>
+
+<!-- AI 信号滚动条 -->
+<div class="signal-ticker" id="signalTicker">
+  <div class="signal-ticker-track" id="signalTickerTrack">
+    <span class="signal-ticker-item waiting"><i class="ri-radar-line"></i> 等待 AI 信号...</span>
+  </div>
+</div>
+
+<!-- 导航 Tab -->
+<div class="nav-tabs" id="navTabs" role="tablist" aria-label="功能导航">
+  <button type="button" class="nav-tab active" id="tab-trading" data-tab="trading" role="tab" aria-selected="true" aria-controls="page-trading" tabindex="0"><i class="ri-exchange-dollar-line"></i> 自动交易</button>
+  <button type="button" class="nav-tab" id="tab-overview" data-tab="overview" role="tab" aria-selected="false" aria-controls="page-overview" tabindex="-1"><i class="ri-dashboard-line"></i> 总览面板</button>
+  <button type="button" class="nav-tab" id="tab-ai-analysis" data-tab="ai-analysis" role="tab" aria-selected="false" aria-controls="page-ai-analysis" tabindex="-1"><i class="ri-robot-2-line"></i> AI 分析</button>
+  <button type="button" class="nav-tab" id="tab-risk" data-tab="risk" role="tab" aria-selected="false" aria-controls="page-risk" tabindex="-1"><i class="ri-shield-check-line"></i> 风控分析</button>
+  <button type="button" class="nav-tab" id="tab-analysis-data" data-tab="analysis-data" role="tab" aria-selected="false" aria-controls="page-analysis-data" tabindex="-1"><i class="ri-database-2-line"></i> 分析数据</button>
+  <button type="button" class="nav-tab" id="tab-signal-log" data-tab="signal-log" role="tab" aria-selected="false" aria-controls="page-signal-log" tabindex="-1"><i class="ri-signal-tower-line"></i> 信号日志</button>
+  <button type="button" class="nav-tab" id="tab-admin" data-tab="admin" role="tab" aria-selected="false" aria-controls="page-admin" tabindex="-1"><i class="ri-settings-3-line"></i> 系统监控</button>
+</div>
+
+</div><!-- /.sticky-top -->
+
+<!-- 主体内容 -->
+<div class="container">
+
+  <!-- ===== Tab: 自动交易 ===== -->
+  <div class="tab-page active" id="page-trading" role="tabpanel" aria-labelledby="tab-trading">
+    <div id="tradingPanelRoot"></div>
+  </div>
+
+  <!-- ===== Tab: 总览面板 ===== -->
+  <div class="tab-page" id="page-overview" role="tabpanel" aria-labelledby="tab-overview">
+
+    <!-- 市场情绪温度计（全宽，第一排） -->
+    <div class="card mb">
+      <div class="card-head"><h3><i class="ri-temp-hot-line"></i> 市场情绪温度计</h3></div>
+      <div class="card-body" id="sentimentPanel">
+        <div class="skeleton skeleton-line lg"></div>
+        <div class="skeleton skeleton-line"></div>
+      </div>
+    </div>
+
+
+    <!-- 概览卡片 -->
+    <div class="section-title">市场概览</div>
+    <div class="overview" id="overviewCards">
+      <!-- 由 coin-data.js 动态填充 -->
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="grid-2 mb">
+      <div class="card">
+        <div class="card-head"><h3><i class="ri-line-chart-line"></i> BTC 价格走势</h3></div>
+        <div class="card-body"><div class="chart-h chart-h-280"><canvas id="btcChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3><i class="ri-bar-chart-grouped-line"></i> 技术指标仪表盘</h3></div>
+        <div class="card-body" id="indicatorPanel">
+          <div class="skeleton skeleton-line lg"></div>
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 资金费率 + 多空比 -->
+    <div class="grid-2 mb">
+      <div class="card">
+        <div class="card-head">
+          <h3><i class="ri-funds-line"></i> 资金费率走势</h3>
+          <span class="badge badge-cyan">实时</span>
+        </div>
+        <div class="card-body"><div class="chart-h chart-h-220"><canvas id="fundingChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h3><i class="ri-scales-3-line"></i> 多空比走势</h3>
+          <span class="badge badge-purple">实时</span>
+        </div>
+        <div class="card-body"><div class="chart-h chart-h-220"><canvas id="lsRatioChart"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- 最近信号 -->
+    <div class="card mb">
+      <div class="card-head"><h3><i class="ri-signal-tower-line"></i> 最近信号</h3></div>
+      <div class="card-body compact">
+        <div class="signal-feed" id="recentSignals">
+          <div class="no-data">暂无信号</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Tab: AI 分析 ===== -->
+  <div class="tab-page" id="page-ai-analysis" role="tabpanel" aria-labelledby="tab-ai-analysis">
+    <!-- AI 信号英雄卡片（由 ai-card.js 填充） -->
+    <div id="aiSignalHero"></div>
+
+    <div id="aiDebatePanel">
+      <div class="no-data">AI 辩论面板加载中...</div>
+    </div>
+  </div>
+
+  <!-- ===== Tab: 风控分析 ===== -->
+  <div class="tab-page" id="page-risk" role="tabpanel" aria-labelledby="tab-risk">
+    <div class="card mb">
+      <div class="card-head">
+        <h3><i class="ri-shield-check-line"></i> AI 信号准确率</h3>
+        <div class="acc-filter-group" id="accFilterGroup">
+          <button class="acc-filter-btn active" data-days="0">全部</button>
+          <button class="acc-filter-btn" data-days="7">7日</button>
+          <button class="acc-filter-btn" data-days="1">今日</button>
+        </div>
+      </div>
+      <div class="card-body" id="accuracyPanel">
+        <div class="skeleton skeleton-line lg"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line"></div>
+      </div>
+    </div>
+
+    <!-- 信号分布热力图 + AI 雷达 -->
+    <div class="grid-2 mb">
+      <div class="card">
+        <div class="card-head"><h3><i class="ri-calendar-schedule-line"></i> 信号分布热力图（按小时/星期）</h3></div>
+        <div class="card-body">
+          <div class="heatmap-labels"><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span></div>
+          <div id="signalHeatmap"></div>
+          <div class="heatmap-scale"><span>卖出</span><div class="bar"></div><span>买入</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3><i class="ri-radar-line"></i> AI 角色置信度雷达</h3></div>
+        <div class="card-body">
+          <div class="chart-h chart-h-250"><canvas id="aiRadarChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 信号强度指标 -->
+    <div class="card mb">
+      <div class="card-head"><h3><i class="ri-pie-chart-line"></i> 风控指标仪表盘</h3></div>
+      <div class="card-body" id="riskMetricsPanel">
+        <div class="no-data">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Tab: 分析数据 ===== -->
+  <div class="tab-page" id="page-analysis-data" role="tabpanel" aria-labelledby="tab-analysis-data">
+    <div class="card mb">
+      <div class="card-head"><h3><i class="ri-database-2-line"></i> 分析数据（独立栏目）</h3></div>
+      <div class="card-body">
+        <div id="analysisDataStepsStatic" style="border:1px solid var(--border);background:var(--bg2);border-radius:14px;padding:12px">
+          <div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--text)">
+            <i class="ri-list-check-3"></i> 本次执行记录（5步）
+          </div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.55;color:var(--text2)"><span style="color:#22c55e;font-weight:900">✓</span><span>锁定并记录现有 AI 分析接口与前端行为基线，明确最小回滚点</span></div>
+            <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.55;color:var(--text2)"><span style="color:#22c55e;font-weight:900">✓</span><span>后端新增全量输入输出字段并完成入库与序列化兼容</span></div>
+            <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.55;color:var(--text2)"><span style="color:#22c55e;font-weight:900">✓</span><span>在现有风格下并行实现新 AI 分析排版与交互功能</span></div>
+            <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.55;color:var(--text2)"><span style="color:#22c55e;font-weight:900">✓</span><span>逐步切换入口与事件联动，保持其他板块无回归</span></div>
+            <div style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.55;color:var(--text2)"><span style="color:#22c55e;font-weight:900">✓</span><span>验证通过后清理旧渲染与冗余监听，保留短期兼容层</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 动态内容独立区块，不在 .card 内部，避免 overflow:hidden 裁剪 -->
+    <div id="analysisDataDynamic" style="display:block;visibility:visible;min-height:80px;margin-bottom:24px">
+      <div style="text-align:center;color:var(--text3);padding:40px 20px;font-size:13px">分析数据加载中...</div>
+    </div>
+  </div>
+
+  <!-- ===== Tab: 信号日志 ===== -->
+  <div class="tab-page" id="page-signal-log" role="tabpanel" aria-labelledby="tab-signal-log">
+    <!-- 巨鲸警报 -->
+    <div class="card mb">
+      <div class="card-head"><h3><i class="ri-spy-line"></i> 巨鲸监控</h3></div>
+      <div class="card-body" id="whalePanel">
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line"></div>
+      </div>
+    </div>
+    <!-- 信号历史 -->
+    <div class="card">
+      <div class="card-head"><h3><i class="ri-history-line"></i> 信号历史</h3></div>
+      <div class="card-body compact">
+        <div class="signal-feed" id="signalHistory">
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Tab: 系统监控 ===== -->
+  <div class="tab-page" id="page-admin" role="tabpanel" aria-labelledby="tab-admin">
+    <!-- API 配额监控 -->
+    <div class="card mb">
+      <div class="card-head">
+        <h3><i class="ri-database-2-line"></i> API 配额监控</h3>
+        <span class="badge badge-blue">实时</span>
+      </div>
+      <div class="card-body" id="quotaPanel">
+        <div class="skeleton skeleton-line lg"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line"></div>
+      </div>
+    </div>
+
+    <!-- 成本监控 -->
+    <div class="card mb">
+      <div class="card-head">
+        <h3><i class="ri-money-dollar-circle-line"></i> 成本监控</h3>
+        <span class="badge badge-green">今日</span>
+      </div>
+      <div class="card-body" id="costPanel">
+        <div class="skeleton skeleton-line lg"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line"></div>
+      </div>
+    </div>
+
+    <!-- 配额说明 -->
+    <div class="card">
+      <div class="card-head"><h3><i class="ri-book-open-line"></i> 配额与成本说明</h3></div>
+      <div class="card-body">
+        <div class="quota-info-grid">
+          <div class="info-item">
+            <span class="info-icon"><i class="ri-cloud-line"></i></span>
+            <div class="info-content">
+              <div class="info-title">每日配额</div>
+              <div class="info-desc">系统每日 API 调用上限，超限后将暂停非必要分析</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="info-icon"><i class="ri-alert-line"></i></span>
+            <div class="info-content">
+              <div class="info-title">警告阈值 (80%)</div>
+              <div class="info-desc">达到此阈值时系统会发出警告，建议关注使用情况</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="info-icon"><i class="ri-alarm-warning-line"></i></span>
+            <div class="info-content">
+              <div class="info-title">危险阈值 (90%)</div>
+              <div class="info-desc">达到此阈值时将跳过次要币种分析，优先保证主要币种</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="info-icon"><i class="ri-coins-line"></i></span>
+            <div class="info-content">
+              <div class="info-title">成本计算</div>
+              <div class="info-desc">基于 DeepSeek API 价格：Chat ¥0.001/千token，R1 ¥0.003/千token</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- AI 每日一句 -->
+<div class="daily-quote hidden" id="dailyQuote">
+  <span class="quote-text" id="quoteText"></span>
+</div>
+
+</div><!-- /main-content -->
+
+<!-- 底部实时行情滚动条 -->
+<div class="ticker-bar" aria-hidden="true">
+  <div class="ticker-track" id="tickerTrack">
+    <!-- 由 coin-data.js 动态填充 -->
+  </div>
+</div>
+
+<!-- AI 聊天悬浮窗（由 ai-chat.js 创建） -->
+<div id="aiChatRoot"></div>
+
+
+<!-- JS 模块加载（v21 缓存破解） -->
+<!-- Chart.js 必须先加载，避免业务脚本中 Chart 未定义 -->
+  <script src="https://cdn.jsdelivr.net/npm/morphdom@2.7.3/dist/morphdom-umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script type="module" src="js/auth.js?v=10"></script>
+<script type="module" src="js/websocket.js?v=13"></script>
+<script type="module" src="js/coin-data.js?v=36"></script>
+<script type="module" src="js/charts.js?v=11"></script>
+<script type="module" src="js/gauge.js?v=10"></script>
+<script type="module" src="js/ai-card.js?v=37"></script>
+<script type="module" src="js/ai-debate.js?v=68"></script>
+<script type="module" src="js/analysis-data.js?v=23"></script>
+<script type="module" src="js/ai-chat.js?v=30"></script>
+<script type="module" src="js/voice.js?v=43"></script>
+<script type="module" src="js/particles.js?v=10"></script>
+<script type="module" src="js/extras.js?v=44"></script>
+<script type="module" src="js/monitoring.js?v=12"></script>
+<script type="module" src="js/trading/utils.js?v=1"></script>
+<script type="module" src="js/trading/styles.js?v=1"></script>
+<script type="module" src="js/trading/html-template.js?v=1"></script>
+<script type="module" src="js/trading/balance.js?v=1"></script>
+<script type="module" src="js/trading/positions.js?v=1"></script>
+<script type="module" src="js/trading/orders.js?v=1"></script>
+<script type="module" src="js/trading/stats.js?v=1"></script>
+<script type="module" src="js/trading/charts.js?v=1"></script>
+<script type="module" src="js/trading-panel.js?v=185"></script>
+<script type="module" src="js/app.js?v=18"></script>
+</body>
+</html>

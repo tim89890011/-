@@ -1,0 +1,16 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "pythonPath": "/opt/homebrew/opt/python@3.13/bin/python3.13",
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "none",
+  "reportImplicitRelativeImport": "none",
+  "reportAttributeAccessIssue": "none",
+  "extraPaths": [
+    "venv/lib/python3.13/site-packages"
+  ],
+  "include": [
+    "backend"
+  ]
+}
